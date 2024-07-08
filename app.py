@@ -196,6 +196,8 @@ def simulacion():
     with open('datos_cajas.json', 'w') as archivo_json:
         json.dump(datos_cajas, archivo_json, indent=4)
 
+    tabla_clientes2 = tabla_clientes.reverse()
+
     # Mostrar tabla actualizada
     headers = ["Cliente", "Valor Aleatorio 1", "Tell", "Hill", "Valor Aleatorio 2", "Tipo Cliente", "Bonificación", "Tiempo de Servicio", "Tiempo de Espera", "Tiempo de Salida"]
     print(tabulate(tabla_clientes, headers, tablefmt="grid"))

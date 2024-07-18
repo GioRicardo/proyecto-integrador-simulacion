@@ -2,6 +2,7 @@ import random
 import math
 from tabulate import tabulate
 import json
+import matplotlib.pyplot as plt
 
 # --------------------------------------------------------------------------------------------
 
@@ -9,7 +10,7 @@ import json
 # Variables globales
 cola_espera = []
 buffer = []
-cajas = [None] * 10
+cajas = [None] * 5
 current_time = 0
 current_time2 = 0
 cola = []
@@ -254,6 +255,35 @@ def simulacion():
     print("Orden de salida de los clientes de las cajas")
     print(tabulate(table, headers=headers, tablefmt="grid"))
     #print(tabla_clientes)
-    print(count1)
+    headers2 = list(datos_cajas2[0].keys()) 
+    # Suponiendo que datos_cajas2 es una lista de diccionarios con las claves 'tiempo_espera', 'tiempo_salida', 'hill' y 'tipo_cliente'
+    tiempo_espera = [d['tiempo_espera'] for d in datos_cajas2]
+    tiempo_salida = [d['tiempo_salida'] for d in datos_cajas2]
+    hill = [d['hill'] for d in datos_cajas2]
+    tipo_cliente = [d['tipo_cliente'] for d in datos_cajas2]
+
+    # Crear una figura y un eje
+    fig, ax = plt.subplots()
+
+    # Definir colores y marcadores para cada tipo de cliente y hill
+    colores = {'USUARIO': 'r', 'EMPRESAS': 'g', 'PERSONAL': 'b', 'BANCARIO': 'c', 'ESPECIAL': 'm', 'VIP': 'y', 'TRANSFERIDO': 'k'}
+    marcadores = {'Hill1': 'o', 'Hill2': 's', 'Hill3': '^', 'Hill4': 'd'}
+
+    # Graficar los datos
+    for t_espera, t_salida, h, t_cliente in zip(tiempo_espera, tiempo_salida, hill, tipo_cliente):
+        ax.scatter(t_espera, t_salida, color=colores.get(t_cliente, 'k'), marker=marcadores.get(h, 'x'), label=f'{t_cliente} - {h}')
+
+    # Añadir etiquetas y título
+    ax.set_xlabel('Tiempo de Espera')
+    ax.set_ylabel('Tiempo de Salida')
+    ax.set_title('Gráfico de Tiempo de Espera vs Tiempo de Salida')
+
+    # Crear una leyenda única
+    handles, labels = ax.get_legend_handles_labels()
+    by_label = dict(zip(labels, handles))
+    ax.legend(by_label.values(), by_label.keys())
+
+    # Mostrar el gráfico
+    plt.show()
 if __name__ == '__main__':
     simulacion()

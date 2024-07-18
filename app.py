@@ -9,10 +9,13 @@ import json
 # Variables globales
 cola_espera = []
 buffer = []
-cajas = [None] * 4
+cajas = [None] * 10
 current_time = 0
+current_time2 = 0
 cola = []
 tabla_clientes = []  # Estructura para almacenar los datos de la tabla
+count1 = 0
+ejecutado_una_vez = False
 
 # RND - número aleatorio entre 0 y 1
 def generate_random_value():
@@ -31,7 +34,7 @@ def inicio_de_simulacion():
     global current_time, tabla_clientes
     table = []
     # Paso 4: Generar los primeros 20 clientes
-    for i in range(1, 21):
+    for i in range(1, 31):
         cliente = {
             "id": i,
             "tell": 0,
@@ -100,7 +103,8 @@ def inicio_de_simulacion():
         tabla_clientes.append(row)  # Agrega a la tabla de clientes
     
     headers = ["Cliente", "Valor Aleatorio 1", "Tell", "Hill", "Valor Aleatorio 2", "Tipo Cliente", "Bonificación", "Tiempo de Servicio", "Tiempo de Espera", "Tiempo de Salida"]
-    print(tabulate(table, headers, tablefmt="grid"))
+    #print(tabulate(table, headers, tablefmt="grid"))
+    print("\n=====================================================================================================\n")
 
 # Funciones auxiliares para contar tipos de clientes
 def contar_tipo_cliente(tipo):
@@ -111,8 +115,38 @@ def contar_tipo_cliente(tipo):
     return count
 
 def mover_a_buffer():
-    global buffer, cola_espera, cajas, current_time
+    global buffer, cola_espera, cajas, current_time, count1, ejecutado_una_vez
+    
+    if not ejecutado_una_vez and all(caja is None for caja in cajas):
+        count1+=1
+        # Organizar la cola por tiempo de espera + bonificación en orden descendente
+        #cola_espera.sort(key=lambda x: (x["hill"] + x["bonificacion"]), reverse=True)
+        cliente = cola_espera[0]
+        
+        #print(cola_espera)
+        for i in range(len(cajas)):
+            
+            
+            if cola_espera:
+                buffer.append(cola_espera.pop(0))
+                
+                # Si la caja está vacía y hay clientes en el buffer
+                if cajas[i] is None and buffer:
+                        # Asignar el primer cliente del buffer a la caja
+                        cliente = buffer.pop(0)
+                            
+                        # Actualizar el tiempo de salida
+                        cliente["tiempo_espera"] = 0
+                        cliente["tiempo_salida"] = current_time + cliente["service_time"]
+                        cajas[i] = cliente
 
+                        # Actualizar la tabla con los tiempos reales
+                        for row in tabla_clientes:
+                                if row[0] == cliente["id"]:
+                                    row[8] = cliente["tiempo_espera"]
+                                    row[9] = cliente["tiempo_salida"]
+                                    break
+        ejecutado_una_vez = True                      
     # Calcular el tiempo de salida de las cajas
     tiempos_salida = [caja["hill"] + caja["service_time"] if caja is not None else float('inf') for caja in cajas]
     menor_tiempo_salida = min(tiempos_salida)
@@ -149,6 +183,10 @@ def mover_a_buffer():
             if contar_tipo_cliente("Transferido") > 0:
                 continue
 
+
+        
+        
+        
         # Paso 11: Mover cliente al buffer
         buffer.append(cola.pop(0))
 
@@ -160,8 +198,12 @@ def mover_a_cajas():
         if cajas[i] is None and buffer:
             # Asignar el primer cliente del buffer a la caja
             cliente = buffer.pop(0)
-            # Actualizar el tiempo de espera y tiempo de salida
+            # Si todas las cajas están vacías, el tiempo de espera es 0
+            
+            
+            # Actualizar el tiempo de espera
             cliente["tiempo_espera"] = current_time - cliente["hill"]
+            # Actualizar el tiempo de salida
             cliente["tiempo_salida"] = current_time + cliente["service_time"]
             cajas[i] = cliente
 
@@ -174,31 +216,44 @@ def mover_a_cajas():
 
 # Lista para almacenar los datos
 datos_cajas = []
+datos_cajas2 = []
 # Simulación
 def simulacion():
     inicio_de_simulacion()
     while cola_espera or buffer or any(cajas):
         mover_a_buffer()
         mover_a_cajas()
-        
         # Actualizar el estado de las cajas
         for i in range(len(cajas)):
             if cajas[i] is not None:
                 # Decrementar el tiempo de servicio
+                service_time = cajas[i]["service_time"]
                 cajas[i]["service_time"] -= 1
                 # Guardar el estado actual de las cajas
                 datos_cajas.append(cajas[i].copy())  # Agregar una copia del estado actual
                 # Si el tiempo de servicio es 0 o menor, liberar la caja
                 if cajas[i]["service_time"] <= 0:
+                    cajas[i]["service_time"] = service_time
+                    datos_cajas2.append(cajas[i].copy())
                     cajas[i] = None
 
     # Escribir la lista en un archivo JSON del decremento del tiempo de servicio
     with open('datos_cajas.json', 'w') as archivo_json:
         json.dump(datos_cajas, archivo_json, indent=4)
 
+    tabla_clientes2 = tabla_clientes
     # Mostrar tabla actualizada
     headers = ["Cliente", "Valor Aleatorio 1", "Tell", "Hill", "Valor Aleatorio 2", "Tipo Cliente", "Bonificación", "Tiempo de Servicio", "Tiempo de Espera", "Tiempo de Salida"]
+    print("Clientes en orden de llegada")
     print(tabulate(tabla_clientes, headers, tablefmt="grid"))
-
+    headers2 = ["Cliente", "Tell", "Hill", "Tipo Cliente", "Bonificación", "Tiempo de Servicio", "Tiempo de Espera", "Tiempo de Salida"]
+    # Suponiendo que datos_cajas2 no está vacío y todos los diccionarios tienen las mismas claves
+    headers = datos_cajas2[0].keys()
+    # Convertir los diccionarios a listas de valores
+    table = [list(d.values()) for d in datos_cajas2]
+    print("Orden de salida de los clientes de las cajas")
+    print(tabulate(table, headers=headers, tablefmt="grid"))
+    #print(tabla_clientes)
+    print(count1)
 if __name__ == '__main__':
     simulacion()

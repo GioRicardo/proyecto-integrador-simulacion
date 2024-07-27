@@ -3,6 +3,9 @@ import math
 from tabulate import tabulate
 import json
 import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
+from scipy.stats import kurtosis, skew, sem, norm
 
 # --------------------------------------------------------------------------------------------
 
@@ -252,8 +255,76 @@ def simulacion():
     headers = datos_cajas2[0].keys()
     # Convertir los diccionarios a listas de valores
     table = [list(d.values()) for d in datos_cajas2]
-    print("Orden de salida de los clientes de las cajas")
-    print(tabulate(table, headers=headers, tablefmt="grid"))
+    # print("Orden de salida de los clientes de las cajas")
+    
+    # Convertir table a DataFrame
+    df = pd.DataFrame(table)
+    
+    # Cambiar nombres de columnas usando rename()
+    df = df.rename(columns={0: 'Cliente', 1: 'Tell', 2: 'Hill', 3: 'Tipo Cliente', 4: 'Bonificación', 5: 'Tiempo de Servicio', 6: 'Tiempo de Espera', 7: 'Tiempo de Salida'})
+    
+    descriptive_stats = df.describe()
+    # Filtrar solo las columnas numéricas
+    numeric_df = df.select_dtypes(include='number')
+    
+    # print(numeric_df)
+    
+    # Calcular la moda
+    mode = df.mode()
+    
+    # Calcular la desviación estándar de cada columna
+    std_dev = numeric_df.std()
+
+    # Calcular la media de cada columna
+    mean = numeric_df.mean()
+    
+    # Calcular el coeficiente de variación (CV)
+    cv = (std_dev / mean) * 100
+    
+    # Calcular el rango
+    data_range = numeric_df.max() - numeric_df.min()
+    
+    # Calcular la varianza de cada columna numérica
+    variance = numeric_df.var()
+    
+    # Agrupaciones (Group By)
+    grouped = df.groupby('Tipo Cliente').mean()
+    
+    # Error Típico (Standard Error of the Mean)
+    # Calculado como la desviación estándar dividida por la raíz cuadrada del tamaño de la muestra
+    standard_error = numeric_df.apply(sem)
+
+    # Curtosis
+    # La curtosis de una distribución normal es 0. Más de 0 indica una distribución "apuntada".
+    kurtosis_values = numeric_df.apply(kurtosis)
+
+    # Coeficiente de Asimetría (Skewness)
+    # La asimetría de una distribución normal es 0. Los valores positivos indican una cola derecha más larga, los valores negativos una cola izquierda más larga
+    skewness_values = numeric_df.apply(skew)
+    
+    # Mostrar los resultados
+    print("Estadísticas Descriptivas Básicas:\n", descriptive_stats)
+    print("=====================================================================================================")
+    print("\nModa:\n", mode)
+    print("=====================================================================================================")
+    print("\nVarianza:\n", variance)
+    print("=====================================================================================================")
+    print("\nDesviación Estándar:\n", std_dev)
+    print("=====================================================================================================")
+    print("\nCoeficiente de Variación (%):\n", cv)
+    print("=====================================================================================================")
+    print("\nRango:\n", data_range)
+    print("=====================================================================================================")
+    print("\nEstadísticas por grupo: media por tipo de cliente\n", grouped)
+    print("=====================================================================================================")
+    print("\nError Típico (SEM):\n", standard_error)
+    print("=====================================================================================================")
+    print("\nCurtosis:\n", kurtosis_values)
+    print("=====================================================================================================")
+    print("\nCoeficiente de Asimetría (Skewness):\n", skewness_values)
+    # Mostrar el DataFrame
+    # print(df.describe())
+    # print(tabulate(table, headers=headers, tablefmt="grid"))
     #print(tabla_clientes)
     headers2 = list(datos_cajas2[0].keys()) 
     # Suponiendo que datos_cajas2 es una lista de diccionarios con las claves 'tiempo_espera', 'tiempo_salida', 'hill' y 'tipo_cliente'

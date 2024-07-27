@@ -1,2 +1,5 @@
 tabulate
 matplotlib
+pandas
+scipy
+numpy
